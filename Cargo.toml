@@ -1,0 +1,6 @@
+[package]
+name = "mady"
+version = "0.1.0"
+authors = ["Guillaume Fraux <guillaume.fraux@chimie-paristech.fr>"]
+
+[dependencies]
