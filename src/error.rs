@@ -1,9 +1,12 @@
 use std::error;
 use std::fmt::{self, Display, Formatter};
 
+/// Error type for the caldyn crate
 #[derive(Debug, Clone, PartialEq)]
 pub enum Error {
+    /// Error while parsing an expression
     ParseError(String),
+    /// Unknown variable during evaluation
     NameError(String),
 }
 

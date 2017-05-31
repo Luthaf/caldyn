@@ -4,17 +4,27 @@ use std::ascii::AsciiExt;
 
 use error::Error;
 
+/// Ast nodes for the expressions
 enum Ast {
+    /// A variable, to be resolved later
     Variable(String),
+    /// A constant value
     Value(f64),
+    /// <left> + <right>
     Add(Box<Ast>, Box<Ast>),
+    /// <left> - <right>
     Sub(Box<Ast>, Box<Ast>),
+    /// <left> * <right>
     Mul(Box<Ast>, Box<Ast>),
+    /// <left> / <right>
     Div(Box<Ast>, Box<Ast>),
+    /// <left> ^ <right>
     Exp(Box<Ast>, Box<Ast>),
 }
 
 impl Ast {
+    /// Construct the AST for a vector of tokens in reverse polish notation.
+    /// This function eats the tokens as it uses them
     fn from_tokens(tokens: &mut Vec<Token>, context: &str) -> Result<Ast, Error> {
         match tokens.pop() {
             None => Err(Error::ParseError(format!("empty expression{}", context))),
@@ -22,7 +32,7 @@ impl Ast {
                 Token::Value(value) => {
                     if let Ok(number) = value.parse() {
                         Ok(Ast::Value(number))
-                    } else if is_ident(&value) {
+                    } else if is_variable(&value) {
                         Ok(Ast::Variable(value))
                     } else {
                         Err(Error::ParseError(format!("invalid value {}", value)))
@@ -44,6 +54,7 @@ impl Ast {
         }
     }
 
+    /// Recursively evaluate the AST
     fn eval(&self) -> Result<f64, Error> {
         match *self {
             Ast::Variable(ref name) => Err(Error::NameError(format!("name '{}' is not defined", name))),
@@ -56,6 +67,8 @@ impl Ast {
         }
     }
 
+    /// If the AST node correspond to a constant, get `Some(constant)`. Else,
+    /// get `None`
     fn value(&self) -> Option<f64> {
         if let Ast::Value(value) = *self {
             Some(value)
@@ -64,6 +77,7 @@ impl Ast {
         }
     }
 
+    /// Optimize the AST by doing constants propagation
     fn optimize(self) -> Ast {
         match self {
             Ast::Variable(_) | Ast::Value(_) => self,
@@ -121,17 +135,35 @@ impl Ast {
     }
 }
 
+/// A parsed and optimized mathematical expression.
+///
+/// # Examples
+/// ```
+/// # use caldyn::Expr;
+/// let expr = Expr::parse("3 + 5 * 2").unwrap();
+/// assert_eq!(expr.eval(), Ok(13.0));
+/// ```
 pub struct Expr {
     ast: Ast,
 }
 
 impl Expr {
+    /// Parse the given mathematical `expression` into an `Expr`.
+    ///
+    /// # Examples
+    /// ```
+    /// # use caldyn::Expr;
+    /// // A valid expression
+    /// assert!(Expr::parse("3 + 5 * 2").is_ok());
+    /// // an invalid expression
+    /// assert!(Expr::parse("3eff + 5 * 2").is_err());
+    /// ```
     pub fn parse(expression: &str) -> Result<Expr, Error> {
-        let mut parser = Parser::new(expression);
+        let mut lexer = Lexer::new(expression);
         let mut output = Vec::new();
         let mut operators = Vec::new();
 
-        'tokens: while let Some(token) = try!(parser.next()) {
+        'tokens: while let Some(token) = try!(lexer.next()) {
             match token {
                 Token::Value(_) => output.push(token),
                 Token::Op(o1) => {
@@ -183,11 +215,21 @@ impl Expr {
         }
     }
 
+    /// Evaluate the expression
+    ///
+    ///
+    /// # Examples
+    /// ```
+    /// # use caldyn::Expr;
+    /// let expr = Expr::parse("3 + 5 * 2").unwrap();
+    /// assert_eq!(expr.eval(), Ok(13.0));
+    /// ```
     pub fn eval(&self) -> Result<f64, Error> {
         self.ast.eval()
     }
 }
 
+/// Allowed operators in the algorithm
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Op {
     Plus,
@@ -198,6 +240,8 @@ enum Op {
 }
 
 impl Op {
+    /// Get the operator precedence. Operators with higher precedence should be
+    /// evaluated first.
     fn precedence(&self) -> u8 {
         match *self {
             Op::Plus => 1,
@@ -208,6 +252,7 @@ impl Op {
         }
     }
 
+    /// Check if the operator is left associative
     fn is_left_associative(&self) -> bool {
         match *self {
             Op::Plus => true,
@@ -218,27 +263,33 @@ impl Op {
         }
     }
 
+    /// Check if the operator is right associative
     fn is_right_associative(&self) -> bool {
         !self.is_left_associative()
     }
 }
 
+/// Possible tokens to find in the input string
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
+    /// Any literal: value or variables
     Value(String),
+    /// A boolean operator
     Op(Op),
+    /// Left parenthesis
     LParen,
+    /// Right parenthesis
     RParen,
 }
 
-
-struct Parser<'a> {
+/// An helper struct for lexing the input
+struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
 }
 
-impl<'a> Parser<'a> {
-    fn new(string: &str) -> Parser {
-        Parser {
+impl<'a> Lexer<'a> {
+    fn new(string: &str) -> Lexer {
+        Lexer {
             input: string.chars().peekable()
         }
     }
@@ -281,37 +332,54 @@ impl<'a> Parser<'a> {
     }
 }
 
+/// Check if `c` can appear at the first character of a value
 fn is_value_start(c: char) -> bool {
-    c == '+' || c == '-' || c.is_digit(10) || is_ident_start(c)
+    c == '+' || c == '-' || c.is_digit(10) || is_variable_start(c)
 }
 
+/// Check if `c` can appear inside a value
 fn is_value_part(c: char) -> bool {
-    c == '+' || c == '-' || is_ident_part(c)
+    c == '+' || c == '-' || is_variable_part(c)
 }
 
-fn is_ident_start(c: char) -> bool {
+/// Check if `c` can appear at the first character of a variable
+fn is_variable_start(c: char) -> bool {
     c == '_' || (c.is_ascii() && c.is_alphabetic())
 }
 
-fn is_ident_part(c: char) -> bool {
+/// Check if `c` can appear inside a variable
+fn is_variable_part(c: char) -> bool {
     c == '_' || (c.is_ascii() && c.is_alphanumeric())
 }
 
-fn is_ident(ident: &str) -> bool {
+/// Check if `ident` is a variable
+fn is_variable(ident: &str) -> bool {
     let mut chars = ident.chars();
     // Check first char
-    if !chars.next().map_or(false, is_ident_start) {
+    if !chars.next().map_or(false, is_variable_start) {
         return false;
     }
     // Check all others
     for c in chars {
-        if !is_ident_part(c) {
+        if !is_variable_part(c) {
             return false;
         }
     }
     return true;
 }
 
+/// Evaluate a single expression from `input`.
+///
+/// Returns `Ok(result)` if the evaluation is successful, or `Err(cause)` if
+/// parsing or evaluating the expression failed.
+///
+/// # Example
+///
+/// ```
+/// use caldyn::eval;
+///
+/// assert_eq!(eval("45 - 2^3"), Ok(37.0));
+/// ```
 pub fn eval(input: &str) -> Result<f64, Error> {
     Expr::parse(input).and_then(|expr| expr.eval())
 }
@@ -322,30 +390,30 @@ mod tests {
 
     #[test]
     fn idents() {
-        assert!(is_ident_start('c'));
-        assert!(is_ident_start('Z'));
-        assert!(is_ident_start('_'));
-        assert!(is_ident_start('f'));
+        assert!(is_variable_start('c'));
+        assert!(is_variable_start('Z'));
+        assert!(is_variable_start('_'));
+        assert!(is_variable_start('f'));
 
-        assert!(!is_ident_start('3'));
-        assert!(!is_ident_start('à'));
-        assert!(!is_ident_start('@'));
+        assert!(!is_variable_start('3'));
+        assert!(!is_variable_start('à'));
+        assert!(!is_variable_start('@'));
 
-        assert!(is_ident_part('c'));
-        assert!(is_ident_part('Z'));
-        assert!(is_ident_part('_'));
-        assert!(is_ident_part('f'));
-        assert!(is_ident_part('3'));
+        assert!(is_variable_part('c'));
+        assert!(is_variable_part('Z'));
+        assert!(is_variable_part('_'));
+        assert!(is_variable_part('f'));
+        assert!(is_variable_part('3'));
 
-        assert!(!is_ident_part('à'));
-        assert!(!is_ident_part('@'));
+        assert!(!is_variable_part('à'));
+        assert!(!is_variable_part('@'));
 
-        assert!(is_ident("_______"));
-        assert!(is_ident("abc"));
-        assert!(is_ident("a__45__bc"));
-        assert!(!is_ident("a-bc"));
-        assert!(!is_ident("@bc"));
-        assert!(!is_ident("6bc"));
+        assert!(is_variable("_______"));
+        assert!(is_variable("abc"));
+        assert!(is_variable("a__45__bc"));
+        assert!(!is_variable("a-bc"));
+        assert!(!is_variable("@bc"));
+        assert!(!is_variable("6bc"));
     }
 
     #[test]
