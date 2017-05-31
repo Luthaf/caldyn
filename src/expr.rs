@@ -136,10 +136,10 @@ enum Op {
 impl Op {
     fn precedence(&self) -> u8 {
         match *self {
-            Op::Plus => 2,
-            Op::Minus => 2,
-            Op::Mul => 1,
-            Op::Div => 1,
+            Op::Plus => 1,
+            Op::Minus => 1,
+            Op::Mul => 2,
+            Op::Div => 2,
             Op::Exp => 3,
         }
     }
@@ -248,6 +248,10 @@ fn is_ident(ident: &str) -> bool {
     return true;
 }
 
+pub fn eval(input: &str) -> Result<f64, Error> {
+    Expr::parse(input).and_then(|expr| expr.eval())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -315,13 +319,15 @@ mod tests {
 
     #[test]
     fn eval() {
-        assert_eq!(Expr::parse("3 + 5").and_then(|expr| expr.eval()).unwrap(), 8.0);
-        assert_eq!(Expr::parse("2 - 5").and_then(|expr| expr.eval()).unwrap(), -3.0);
-        assert_eq!(Expr::parse("2 * 5").and_then(|expr| expr.eval()).unwrap(), 10.0);
-        assert_eq!(Expr::parse("10 / 5").and_then(|expr| expr.eval()).unwrap(), 2.0);
-        assert_eq!(Expr::parse("2 ^ 3").and_then(|expr| expr.eval()).unwrap(), 8.0);
-        assert_eq!(Expr::parse("-3").and_then(|expr| expr.eval()).unwrap(), -3.0);
-        assert_eq!(Expr::parse("25 + -3").and_then(|expr| expr.eval()).unwrap(), 22.0);
-        assert_eq!(Expr::parse("25 - -3").and_then(|expr| expr.eval()).unwrap(), 28.0);
+        assert_eq!(super::eval("3 + 5"), Ok(8.0));
+        assert_eq!(super::eval("2 - 5"), Ok(-3.0));
+        assert_eq!(super::eval("2 * 5"), Ok(10.0));
+        assert_eq!(super::eval("10 / 5"), Ok(2.0));
+        assert_eq!(super::eval("2 ^ 3"), Ok(8.0));
+        assert_eq!(super::eval("-3"), Ok(-3.0));
+        assert_eq!(super::eval("25 + -3"), Ok(22.0));
+        assert_eq!(super::eval("25 - -3"), Ok(28.0));
+        assert_eq!(super::eval("25 - -3"), Ok(28.0));
+        assert_eq!(super::eval("3 + 5 * 2"), Ok(13.0));
     }
 }

@@ -1,7 +1,7 @@
 use std::error;
 use std::fmt::{self, Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Error {
     ParseError(String),
     NameError(String),
