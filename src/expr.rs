@@ -44,7 +44,7 @@ impl Ast {
         }
     }
 
-    pub fn eval(&self) -> Result<f64, Error> {
+    fn eval(&self) -> Result<f64, Error> {
         match *self {
             Ast::Variable(ref name) => Err(Error::NameError(format!("name '{}' is not defined", name))),
             Ast::Value(number) => Ok(number),
@@ -53,6 +53,70 @@ impl Ast {
             Ast::Mul(ref left, ref right) => Ok(try!(left.eval()) * try!(right.eval())),
             Ast::Div(ref left, ref right) => Ok(try!(left.eval()) / try!(right.eval())),
             Ast::Exp(ref left, ref right) => Ok(try!(left.eval()).powf(try!(right.eval()))),
+        }
+    }
+
+    fn value(&self) -> Option<f64> {
+        if let Ast::Value(value) = *self {
+            Some(value)
+        } else {
+            None
+        }
+    }
+
+    fn optimize(self) -> Ast {
+        match self {
+            Ast::Variable(_) | Ast::Value(_) => self,
+            Ast::Add(left, right) => {
+                let left = left.optimize();
+                let right = right.optimize();
+                if let Some(left) = left.value() {
+                    if let Some(right) = right.value() {
+                        return Ast::Value(left + right);
+                    }
+                }
+                return Ast::Add(Box::new(left), Box::new(right));
+            }
+            Ast::Sub(left, right) => {
+                let left = left.optimize();
+                let right = right.optimize();
+                if let Some(left) = left.value() {
+                    if let Some(right) = right.value() {
+                        return Ast::Value(left - right);
+                    }
+                }
+                return Ast::Sub(Box::new(left), Box::new(right));
+            }
+            Ast::Mul(left, right) => {
+                let left = left.optimize();
+                let right = right.optimize();
+                if let Some(left) = left.value() {
+                    if let Some(right) = right.value() {
+                        return Ast::Value(left * right);
+                    }
+                }
+                return Ast::Mul(Box::new(left), Box::new(right));
+            }
+            Ast::Div(left, right) => {
+                let left = left.optimize();
+                let right = right.optimize();
+                if let Some(left) = left.value() {
+                    if let Some(right) = right.value() {
+                        return Ast::Value(left / right);
+                    }
+                }
+                return Ast::Div(Box::new(left), Box::new(right));
+            }
+            Ast::Exp(left, right) => {
+                let left = left.optimize();
+                let right = right.optimize();
+                if let Some(left) = left.value() {
+                    if let Some(right) = right.value() {
+                        return Ast::Value(left.powf(right));
+                    }
+                }
+                return Ast::Exp(Box::new(left), Box::new(right));
+            }
         }
     }
 }
@@ -113,7 +177,7 @@ impl Expr {
 
         let ast = try!(Ast::from_tokens(&mut output, ""));
         if output.is_empty() {
-            Ok(Expr{ast: ast})
+            Ok(Expr{ast: ast.optimize()})
         } else {
             Err(Error::ParseError("extra data at the end of the expression".into()))
         }
@@ -329,5 +393,14 @@ mod tests {
         assert_eq!(super::eval("25 - -3"), Ok(28.0));
         assert_eq!(super::eval("25 - -3"), Ok(28.0));
         assert_eq!(super::eval("3 + 5 * 2"), Ok(13.0));
+    }
+
+    #[test]
+    fn optimize() {
+        let Expr{ast} = Expr::parse("3 + 5").unwrap();
+        assert_eq!(ast.value(), Some(8.0));
+
+        let Expr{ast} = Expr::parse("(3 + 5^2)*45").unwrap();
+        assert_eq!(ast.value(), Some(1260.0));
     }
 }
