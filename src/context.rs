@@ -16,13 +16,15 @@ use std::collections::BTreeMap;
 /// ```
 pub struct Context {
     values: BTreeMap<String, f64>,
+    query: Option<Box<Fn(&str) -> Option<f64>>>,
 }
 
 impl Context {
     /// Create a new empty context
     pub fn new() -> Context {
         Context {
-            values: BTreeMap::new()
+            values: BTreeMap::new(),
+            query: None,
         }
     }
 
@@ -60,7 +62,42 @@ impl Context {
     /// assert_eq!(context.get("d"), None);
     /// ```
     pub fn get(&self, name: &str) -> Option<f64> {
-        self.values.get(name).cloned()
+        self.values.get(name).cloned().or_else(|| {
+            self.query.as_ref().and_then(|function| function(name))
+        })
+    }
+
+    /// Set a `function` to be called when a variable is not found in the
+    /// context.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use caldyn::Context;
+    /// let mut context = Context::new();
+    /// context.set("a", 3.0);
+    /// assert_eq!(context.get("a"), Some(3.0));
+    /// assert_eq!(context.get("b"), None);
+    ///
+    /// context.set_query(|name| {
+    ///     if name == "a" || name == "b" {
+    ///         Some(28.0)
+    ///     } else {
+    ///         None
+    ///     }
+    /// });
+    ///
+    /// // The function is only called for "b", because "a" is already present
+    /// // in the context.
+    /// assert_eq!(context.get("a"), Some(3.0));
+    /// assert_eq!(context.get("b"), Some(28.0));
+    ///
+    /// // If we set the variable "b", the function will not be called
+    /// context.set("b", 1.0);
+    /// assert_eq!(context.get("b"), Some(1.0));
+    /// ```
+    pub fn set_query<F>(&mut self, function: F) where F: Fn(&str) -> Option<f64> + 'static {
+        self.query = Some(Box::new(function));
     }
 }
 

@@ -41,6 +41,25 @@
 //! assert_eq!(expr.eval(&context), Ok(13.0));
 //! ```
 //!
+//! It is also possible to set a callback function to be used when a variable
+//! is not found in the context:
+//!
+//! ```
+//! use caldyn::{eval, Context};
+//!
+//! let mut context = Context::new();
+//! context.set_query(|name| {
+//!     match name {
+//!         "a" | "b" | "c" => Some(1.0),
+//!         _ => None
+//!     }
+//! });
+//!
+//! assert_eq!(eval("a + b", &context), Ok(2.0));
+//! // the following line would error with "undefined variable 'd'" message
+//! // eval("d / 2", &context);
+//! ```
+//!
 //! # Language definition
 //!
 //! The language implemented by caldyn can contain the following elements:
