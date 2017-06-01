@@ -63,3 +63,21 @@ impl Context {
         self.values.get(name).cloned()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn variables() {
+        let mut context = Context::new();
+        context.set("a", 2.0);
+        assert_eq!(context.get("a"), Some(2.0));
+        assert_eq!(context.get("b"), None);
+
+        context.set("a", 5.0);
+        context.set("b", 1.0);
+        assert_eq!(context.get("a"), Some(5.0));
+        assert_eq!(context.get("b"), Some(1.0));
+    }
+}
