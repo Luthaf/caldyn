@@ -8,7 +8,8 @@ repository = "https://github.com/Luthaf/caldyn"
 homepage = "https://github.com/Luthaf/caldyn"
 documentation = "https://docs.rs/caldyn/"
 description = """
-Dynamic evaluation of mathematical expressions 
+Dynamic evaluation of mathematical expressions
 """
 
 [dependencies]
+lazy_static = "0.2"

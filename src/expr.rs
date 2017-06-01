@@ -1,9 +1,38 @@
 use std::str::Chars;
 use std::iter::Peekable;
 use std::ascii::AsciiExt;
+use std::collections::BTreeMap;
 
 use error::Error;
 use context::Context;
+
+lazy_static!{
+    static ref FUNCTIONS: BTreeMap<String, fn(f64) -> f64> = {
+        let mut map = BTreeMap::<String, fn(f64) -> f64>::new();
+        map.insert("sqrt".into(), f64::sqrt);
+        map.insert("cbrt".into(), f64::cbrt);
+        map.insert("sin".into(), f64::sin);
+        map.insert("cos".into(), f64::cos);
+        map.insert("tan".into(), f64::tan);
+        map.insert("asin".into(), f64::asin);
+        map.insert("acos".into(), f64::acos);
+        map.insert("atan".into(), f64::atan);
+        map.insert("sinh".into(), f64::sinh);
+        map.insert("cosh".into(), f64::cosh);
+        map.insert("tanh".into(), f64::tanh);
+        map.insert("asinh".into(), f64::asinh);
+        map.insert("acosh".into(), f64::acosh);
+        map.insert("atanh".into(), f64::atanh);
+        map.insert("floor".into(), f64::floor);
+        map.insert("ceil".into(), f64::ceil);
+        map.insert("abs".into(), f64::abs);
+        map.insert("exp".into(), f64::exp);
+        map.insert("ln".into(), f64::ln);
+        map.insert("log2".into(), f64::log2);
+        map.insert("log10".into(), f64::log10);
+        map
+    };
+}
 
 /// Ast nodes for the expressions
 enum Ast {
@@ -21,6 +50,8 @@ enum Ast {
     Div(Box<Ast>, Box<Ast>),
     /// <left> ^ <right>
     Exp(Box<Ast>, Box<Ast>),
+    /// fn(<arg>)
+    Function(fn(f64) -> f64, Box<Ast>),
 }
 
 impl Ast {
@@ -31,7 +62,10 @@ impl Ast {
             None => Err(Error::ParseError(format!("empty expression{}", context))),
             Some(token) => match token {
                 Token::Value(value) => {
-                    if let Ok(number) = value.parse() {
+                    if let Some(&func) = FUNCTIONS.get(&value) {
+                        let args = Box::new(try!(Ast::from_tokens(tokens, " in function call")));
+                        Ok(Ast::Function(func, args))
+                    } else if let Ok(number) = value.parse() {
                         Ok(Ast::Value(number))
                     } else if is_variable(&value) {
                         Ok(Ast::Variable(value))
@@ -69,6 +103,7 @@ impl Ast {
             Ast::Mul(ref left, ref right) => Ok(try!(left.eval(context)) * try!(right.eval(context))),
             Ast::Div(ref left, ref right) => Ok(try!(left.eval(context)) / try!(right.eval(context))),
             Ast::Exp(ref left, ref right) => Ok(try!(left.eval(context)).powf(try!(right.eval(context)))),
+            Ast::Function(ref func, ref arg) => Ok(func(try!(arg.eval(context)))),
         }
     }
 
@@ -86,6 +121,13 @@ impl Ast {
     fn optimize(self) -> Ast {
         match self {
             Ast::Variable(_) | Ast::Value(_) => self,
+            Ast::Function(func, arg) => {
+                let arg = arg.optimize();
+                if let Some(arg) = arg.value() {
+                    return Ast::Value(func(arg));
+                }
+                return Ast::Function(func, Box::new(arg));
+            }
             Ast::Add(left, right) => {
                 let left = left.optimize();
                 let right = right.optimize();
@@ -175,6 +217,9 @@ impl Expr {
 
         'tokens: while let Some(token) = try!(lexer.next()) {
             match token {
+                Token::Value(ref name) if FUNCTIONS.contains_key(name) => {
+                    operators.push(token.clone());
+                },
                 Token::Value(_) => output.push(token),
                 Token::Op(o1) => {
                     'operators: while let Some(token) = operators.last().cloned() {
@@ -199,7 +244,18 @@ impl Expr {
                 Token::RParen => {
                     while let Some(token) = operators.pop() {
                         match token {
-                            Token::LParen => continue 'tokens,
+                            Token::LParen => {
+                                let next_is_fn = if let Some(&Token::Value(ref name)) = operators.last() {
+                                    FUNCTIONS.contains_key(name)
+                                } else {
+                                    false
+                                };
+
+                                if next_is_fn {
+                                    output.push(operators.pop().expect("emtpy operator stack"));
+                                }
+                                continue 'tokens
+                            },
                             Token::Op(_) => output.push(token),
                             other => panic!("Internal bug: found {:?} in operators stack", other)
                         }
@@ -471,6 +527,7 @@ mod tests {
         assert!(Expr::parse("(3 + -5)*45").is_ok());
         assert!(Expr::parse("(3. + 5.0)*\t\n45").is_ok());
         assert!(Expr::parse("(3 + 5^5e-6)*45").is_ok());
+        assert!(Expr::parse("sin(34.0) ^ sqrt(28.0)").is_ok());
     }
 
     #[test]
@@ -485,6 +542,8 @@ mod tests {
         assert_eq!(super::eval("25 - -3", None), Ok(28.0));
         assert_eq!(super::eval("25 - -3", None), Ok(28.0));
         assert_eq!(super::eval("3 + 5 * 2", None), Ok(13.0));
+        assert_eq!(super::eval("sqrt(9)", None), Ok(3.0));
+        assert_eq!(super::eval("sin(18.0) * 3", None), Ok(3.0 * f64::sin(18.0)));
 
         let mut context = Context::new();
         context.set("a", 1.0);
@@ -505,5 +564,8 @@ mod tests {
 
         let Expr{ast} = Expr::parse("(3 + 5^2)*45").unwrap();
         assert_eq!(ast.value(), Some(1260.0));
+
+        let Expr{ast} = Expr::parse("sqrt(9)").unwrap();
+        assert_eq!(ast.value(), Some(3.0));
     }
 }

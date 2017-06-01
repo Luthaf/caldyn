@@ -71,6 +71,11 @@
 //!   (`std::f64::powf`);
 //! - variables. Variables names are ascii only, and can start by a letter or
 //!   `_`, and can contain letters, digits or `_`.
+//! - function call: `sin(a)`, `atan(22.0)`. The following function are
+//!   acessible, with the same meaning as the corresponding `std::f64`
+//!   function: `sqrt`, `cbrt`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`,
+//!   `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`, `floor`, `ceil`,
+//!   `abs`, `exp`, `ln`, `log2`, `log10`.
 //!
 //! Any other symbol is forbidden in the input.
 //!
@@ -83,6 +88,9 @@
 //! caldyn is based on an AST interpreter, and uses a simple Shuntting-Yard
 //! algorithm for parsing the expressions. It works only with `f64` data, and
 //! perform a simple constant propagation to optimize the expressions.
+
+#[macro_use]
+extern crate lazy_static;
 
 mod error;
 mod expr;
