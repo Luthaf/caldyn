@@ -357,7 +357,7 @@ fn is_value_start(c: char) -> bool {
 
 /// Check if `c` can appear inside a value
 fn is_value_part(c: char) -> bool {
-    c == '+' || c == '-' || is_variable_part(c)
+    c == '+' || c == '-' || c == '.' || is_variable_part(c)
 }
 
 /// Check if `c` can appear at the first character of a variable
@@ -459,6 +459,7 @@ mod tests {
         assert!(is_value_part('3'));
         assert!(is_value_part('-'));
         assert!(is_value_part('+'));
+        assert!(is_value_part('.'));
 
         assert!(!is_value_part('à'));
         assert!(!is_value_part('@'));
@@ -466,9 +467,9 @@ mod tests {
 
     #[test]
     fn parse() {
-        assert!(Expr::parse("3 + 5").is_ok());
-        assert!(Expr::parse("(3 + 5)*45").is_ok());
-        assert!(Expr::parse("(3 + 5)*\t\n45").is_ok());
+        assert!(Expr::parse("3 + +5e67").is_ok());
+        assert!(Expr::parse("(3 + -5)*45").is_ok());
+        assert!(Expr::parse("(3. + 5.0)*\t\n45").is_ok());
         assert!(Expr::parse("(3 + 5^5e-6)*45").is_ok());
     }
 
