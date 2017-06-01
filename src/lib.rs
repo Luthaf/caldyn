@@ -47,6 +47,8 @@
 
 mod error;
 mod expr;
+mod context;
 
 pub use error::Error;
 pub use expr::{Expr, eval};
+pub use context::Context;
