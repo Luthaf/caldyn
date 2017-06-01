@@ -3,6 +3,7 @@ use std::iter::Peekable;
 use std::ascii::AsciiExt;
 
 use error::Error;
+use context::Context;
 
 /// Ast nodes for the expressions
 enum Ast {
@@ -54,16 +55,20 @@ impl Ast {
         }
     }
 
-    /// Recursively evaluate the AST
-    fn eval(&self) -> Result<f64, Error> {
+    /// Recursively evaluate the AST in a given context
+    fn eval(&self, context: Option<&Context>) -> Result<f64, Error> {
         match *self {
-            Ast::Variable(ref name) => Err(Error::NameError(format!("name '{}' is not defined", name))),
+            Ast::Variable(ref name) => {
+                context.and_then(|context| context.get(name)).ok_or(
+                    Error::NameError(format!("name '{}' is not defined", name))
+                )
+            },
             Ast::Value(number) => Ok(number),
-            Ast::Add(ref left, ref right) => Ok(try!(left.eval()) + try!(right.eval())),
-            Ast::Sub(ref left, ref right) => Ok(try!(left.eval()) - try!(right.eval())),
-            Ast::Mul(ref left, ref right) => Ok(try!(left.eval()) * try!(right.eval())),
-            Ast::Div(ref left, ref right) => Ok(try!(left.eval()) / try!(right.eval())),
-            Ast::Exp(ref left, ref right) => Ok(try!(left.eval()).powf(try!(right.eval()))),
+            Ast::Add(ref left, ref right) => Ok(try!(left.eval(context)) + try!(right.eval(context))),
+            Ast::Sub(ref left, ref right) => Ok(try!(left.eval(context)) - try!(right.eval(context))),
+            Ast::Mul(ref left, ref right) => Ok(try!(left.eval(context)) * try!(right.eval(context))),
+            Ast::Div(ref left, ref right) => Ok(try!(left.eval(context)) / try!(right.eval(context))),
+            Ast::Exp(ref left, ref right) => Ok(try!(left.eval(context)).powf(try!(right.eval(context)))),
         }
     }
 
@@ -139,9 +144,14 @@ impl Ast {
 ///
 /// # Examples
 /// ```
-/// # use caldyn::Expr;
+/// # use caldyn::{Expr, Context};
 /// let expr = Expr::parse("3 + 5 * 2").unwrap();
-/// assert_eq!(expr.eval(), Ok(13.0));
+/// assert_eq!(expr.eval(None), Ok(13.0));
+///
+/// let mut context = Context::new();
+/// context.set("a", 42.0);
+/// let expr = Expr::parse("-2 * a").unwrap();
+/// assert_eq!(expr.eval(&context), Ok(-84.0));
 /// ```
 pub struct Expr {
     ast: Ast,
@@ -215,17 +225,25 @@ impl Expr {
         }
     }
 
-    /// Evaluate the expression
-    ///
+    /// Evaluate the expression in a given optional `context`.
     ///
     /// # Examples
+    ///
     /// ```
-    /// # use caldyn::Expr;
+    /// # use caldyn::{Expr, Context};
     /// let expr = Expr::parse("3 + 5 * 2").unwrap();
-    /// assert_eq!(expr.eval(), Ok(13.0));
+    /// assert_eq!(expr.eval(None), Ok(13.0));
+    ///
+    /// let expr = Expr::parse("3 + a").unwrap();
+    ///
+    /// let mut context = Context::new();
+    /// context.set("a", -5.0);
+    /// assert_eq!(expr.eval(&context), Ok(-2.0));
+    /// context.set("a", 2.0);
+    /// assert_eq!(expr.eval(&context), Ok(5.0));
     /// ```
-    pub fn eval(&self) -> Result<f64, Error> {
-        self.ast.eval()
+    pub fn eval<'a, C>(&self, context: C) -> Result<f64, Error> where C: Into<Option<&'a Context>> {
+        self.ast.eval(context.into())
     }
 }
 
@@ -376,17 +394,22 @@ fn is_variable(ident: &str) -> bool {
 /// # Example
 ///
 /// ```
-/// use caldyn::eval;
+/// use caldyn::{eval, Context};
 ///
-/// assert_eq!(eval("45 - 2^3"), Ok(37.0));
+/// assert_eq!(eval("45 - 2^3", None), Ok(37.0));
+///
+/// let mut context = Context::new();
+/// context.set("a", -5.0);
+/// assert_eq!(eval("3 * a", &context), Ok(-15.0));
 /// ```
-pub fn eval(input: &str) -> Result<f64, Error> {
-    Expr::parse(input).and_then(|expr| expr.eval())
+pub fn eval<'a, C>(input: &str, context: C) -> Result<f64, Error> where C: Into<Option<&'a Context>> {
+    Expr::parse(input).and_then(|expr| expr.eval(context))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn idents() {
@@ -451,16 +474,27 @@ mod tests {
 
     #[test]
     fn eval() {
-        assert_eq!(super::eval("3 + 5"), Ok(8.0));
-        assert_eq!(super::eval("2 - 5"), Ok(-3.0));
-        assert_eq!(super::eval("2 * 5"), Ok(10.0));
-        assert_eq!(super::eval("10 / 5"), Ok(2.0));
-        assert_eq!(super::eval("2 ^ 3"), Ok(8.0));
-        assert_eq!(super::eval("-3"), Ok(-3.0));
-        assert_eq!(super::eval("25 + -3"), Ok(22.0));
-        assert_eq!(super::eval("25 - -3"), Ok(28.0));
-        assert_eq!(super::eval("25 - -3"), Ok(28.0));
-        assert_eq!(super::eval("3 + 5 * 2"), Ok(13.0));
+        assert_eq!(super::eval("3 + 5", None), Ok(8.0));
+        assert_eq!(super::eval("2 - 5", None), Ok(-3.0));
+        assert_eq!(super::eval("2 * 5", None), Ok(10.0));
+        assert_eq!(super::eval("10 / 5", None), Ok(2.0));
+        assert_eq!(super::eval("2 ^ 3", None), Ok(8.0));
+        assert_eq!(super::eval("-3", None), Ok(-3.0));
+        assert_eq!(super::eval("25 + -3", None), Ok(22.0));
+        assert_eq!(super::eval("25 - -3", None), Ok(28.0));
+        assert_eq!(super::eval("25 - -3", None), Ok(28.0));
+        assert_eq!(super::eval("3 + 5 * 2", None), Ok(13.0));
+
+        let mut context = Context::new();
+        context.set("a", 1.0);
+        context.set("b", 2.0);
+        assert_eq!(super::eval("2 * a", &context), Ok(2.0));
+        assert_eq!(super::eval("(a + b)^2", &context), Ok(9.0));
+
+        let result = super::eval("2 * z", &context);
+        assert_eq!(result.err().unwrap().description(), "name 'z' is not defined");
+        let result = super::eval("2 * a", None);
+        assert_eq!(result.err().unwrap().description(), "name 'a' is not defined");
     }
 
     #[test]
