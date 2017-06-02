@@ -1,6 +1,7 @@
 # Caldyn, dynamic evaluation of mathematical expressions
 
 [![Build Status](https://travis-ci.org/Luthaf/caldyn.svg?branch=master)](https://travis-ci.org/Luthaf/caldyn)
+[![codecov](https://codecov.io/gh/Luthaf/caldyn/branch/master/graph/badge.svg)](https://codecov.io/gh/Luthaf/caldyn)
 
 This crate provide run-time evaluation of mathematical expressions, embedded in
 strings, containing constants and user-provided variables. This can be used to
