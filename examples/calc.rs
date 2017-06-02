@@ -1,3 +1,11 @@
+//! A simple Read-Eval-Print-Loop calculator, usable as a command line tool.
+//!
+//! usage:
+//!    calc expr  # evaluate expr and print result to stdout
+//!    calc       # start a REPL
+//!
+//! In the REPL mode, you can define variables with `<name> = <expr>`.
+
 extern crate caldyn;
 extern crate rustyline;
 extern crate shellexpand;
