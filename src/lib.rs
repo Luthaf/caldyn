@@ -97,5 +97,5 @@ mod expr;
 mod context;
 
 pub use error::Error;
-pub use expr::{Expr, eval};
+pub use expr::{Expr, eval, is_variable};
 pub use context::Context;

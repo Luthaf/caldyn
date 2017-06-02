@@ -13,3 +13,7 @@ Dynamic evaluation of mathematical expressions
 
 [dependencies]
 lazy_static = "0.2"
+
+[dev-dependencies]
+rustyline = "1"
+shellexpand = "1"

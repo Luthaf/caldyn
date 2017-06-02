@@ -73,6 +73,15 @@ assert_eq!(eval("a + b", &context), Ok(2.0));
 // eval("d / 2", &context);
 ```
 
+## Usage as a terminal calculator
+
+You can use the [`calc`](examples/calc.rs) example as your terminal calculator,
+installing it with cargo:
+
+```
+cargo install caldyn --example calc
+```
+
 ## Language definition
 
 The language implemented by caldyn can contain the following elements:

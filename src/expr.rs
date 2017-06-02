@@ -426,8 +426,17 @@ fn is_variable_part(c: char) -> bool {
     c == '_' || (c.is_ascii() && c.is_alphanumeric())
 }
 
-/// Check if `ident` is a variable
-fn is_variable(ident: &str) -> bool {
+/// Check if `ident` is a valid variable name
+///
+/// # Examples
+///
+/// ```
+/// # use caldyn::is_variable;
+///
+/// assert_eq!(is_variable("__abc3"), true);
+/// assert_eq!(is_variable("34zb"), false);
+/// ```
+pub fn is_variable(ident: &str) -> bool {
     let mut chars = ident.chars();
     // Check first char
     if !chars.next().map_or(false, is_variable_start) {
