@@ -2,8 +2,8 @@
 
 //! Caldyn, a crate for dynamic evaluation of mathematical expressions.
 //!
-//! This crate provide run-time evaluation of mathematical expressions, embeded
-//! in strings. The easyest way to use this crate is with the
+//! This crate provide run-time evaluation of mathematical expressions,
+//! embedded in strings. The easiest way to use this crate is with the
 //! [`eval`](fn.eval.html) function:
 //!
 //! ```
@@ -64,15 +64,15 @@
 //!
 //! The language implemented by caldyn can contain the following elements:
 //!
-//! - float litteral values: `-12.456`, `+0.0045e78`, ...;
-//! - left and righ parenthesis;
-//! - mathematical operators: `+` for addition, `-` for substraction,
+//! - float literal values: `-12.456`, `+0.0045e78`, ...;
+//! - left and right parenthesis;
+//! - mathematical operators: `+` for addition, `-` for subtraction,
 //!   `*` for multiplication, `/` for division and `^` for exponentiation
 //!   (`std::f64::powf`);
-//! - variables. Variables names are ascii only, and can start by a letter or
+//! - variables. Variables names are ASCII only, and can start by a letter or
 //!   `_`, and can contain letters, digits or `_`.
 //! - function call: `sin(a)`, `atan(22.0)`. The following function are
-//!   acessible, with the same meaning as the corresponding `std::f64`
+//!   accessible, with the same meaning as the corresponding `std::f64`
 //!   function: `sqrt`, `cbrt`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`,
 //!   `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`, `floor`, `ceil`,
 //!   `abs`, `exp`, `ln`, `log2`, `log10`.
@@ -80,7 +80,7 @@
 //! Any other symbol is forbidden in the input.
 //!
 //! The mathematical operators obey the usual relations of associativity and
-//! precedence, but stil carry the floating point properties: addition is not
+//! precedence, but still carry the floating point properties: addition is not
 //! commutative, `NaN` and infinities exist, ...
 //!
 //! # Technical details
