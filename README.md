@@ -15,7 +15,7 @@ Add the crate to your `Cargo.toml`:
 
 ```
 [dependencies]
-caldyn = "0.1.0"
+caldyn = "0.2"
 ```
 
 The easiest way to use this crate is with the `eval` function:
