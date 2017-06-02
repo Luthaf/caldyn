@@ -1,6 +1,6 @@
 [package]
 name = "caldyn"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Luthaf <luthaf@luthaf.fr>"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
