@@ -298,7 +298,7 @@ impl Expr {
     /// context.set("a", 2.0);
     /// assert_eq!(expr.eval(&context), Ok(5.0));
     /// ```
-    pub fn eval<'a, C>(&self, context: C) -> Result<f64, Error> where C: Into<Option<&'a Context>> {
+    pub fn eval<'a, C>(&self, context: C) -> Result<f64, Error> where C: Into<Option<&'a Context<'a>>> {
         self.ast.eval(context.into())
     }
 }
@@ -467,7 +467,7 @@ pub fn is_variable(ident: &str) -> bool {
 /// context.set("a", -5.0);
 /// assert_eq!(eval("3 * a", &context), Ok(-15.0));
 /// ```
-pub fn eval<'a, C>(input: &str, context: C) -> Result<f64, Error> where C: Into<Option<&'a Context>> {
+pub fn eval<'a, C>(input: &str, context: C) -> Result<f64, Error> where C: Into<Option<&'a Context<'a>>> {
     Expr::parse(input).and_then(|expr| expr.eval(context))
 }
 

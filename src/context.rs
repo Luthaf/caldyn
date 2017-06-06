@@ -14,14 +14,14 @@ use std::collections::BTreeMap;
 /// assert_eq!(context.get("a"), Some(3.0));
 /// assert_eq!(context.get("d"), None);
 /// ```
-pub struct Context {
+pub struct Context<'a> {
     values: BTreeMap<String, f64>,
-    query: Option<Box<Fn(&str) -> Option<f64>>>,
+    query: Option<Box<Fn(&str) -> Option<f64> + 'a>>,
 }
 
-impl Context {
+impl<'a> Context<'a> {
     /// Create a new empty context
-    pub fn new() -> Context {
+    pub fn new() -> Context<'a> {
         Context {
             values: BTreeMap::new(),
             query: None,
@@ -96,7 +96,7 @@ impl Context {
     /// context.set("b", 1.0);
     /// assert_eq!(context.get("b"), Some(1.0));
     /// ```
-    pub fn set_query<F>(&mut self, function: F) where F: Fn(&str) -> Option<f64> + 'static {
+    pub fn set_query<F>(&mut self, function: F) where F: Fn(&str) -> Option<f64> + 'a {
         self.query = Some(Box::new(function));
     }
 }
