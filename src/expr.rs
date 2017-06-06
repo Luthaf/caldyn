@@ -35,6 +35,7 @@ lazy_static!{
 }
 
 /// Ast nodes for the expressions
+#[derive(Debug, Clone, PartialEq)]
 enum Ast {
     /// A variable, to be resolved later
     Variable(String),
@@ -195,6 +196,7 @@ impl Ast {
 /// let expr = Expr::parse("-2 * a").unwrap();
 /// assert_eq!(expr.eval(&context), Ok(-84.0));
 /// ```
+#[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
     ast: Ast,
 }

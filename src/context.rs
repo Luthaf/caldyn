@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fmt;
 
 /// A context hold values for variables, that can be used to evaluate
 /// expressions.
@@ -17,6 +18,19 @@ use std::collections::BTreeMap;
 pub struct Context<'a> {
     values: BTreeMap<String, f64>,
     query: Option<Box<Fn(&str) -> Option<f64> + 'a>>,
+}
+
+impl<'a> fmt::Debug for Context<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let query = match self.query {
+            Some(_) => "Some(<boxed closure>)",
+            None => "None",
+        };
+        fmt.debug_struct("Context")
+           .field("value", &self.values)
+           .field("query", &query)
+           .finish()
+    }
 }
 
 impl<'a> Context<'a> {
@@ -104,6 +118,7 @@ impl<'a> Context<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fmt::Write;
 
     #[test]
     fn variables() {
@@ -116,5 +131,24 @@ mod tests {
         context.set("b", 1.0);
         assert_eq!(context.get("a"), Some(5.0));
         assert_eq!(context.get("b"), Some(1.0));
+    }
+
+    #[test]
+    fn debug() {
+        let mut context = Context::new();
+        context.set("a", 2.0);
+
+        let mut string = String::new();
+        let _ = write!(string, "{:?}", context);
+        assert_eq!(string, "Context { value: {\"a\": 2}, query: \"None\" }");
+
+        let mut string = String::new();
+        let _ = write!(string, "{:#?}", context);
+        assert_eq!(string, "Context {\n    value: {\n        \"a\": 2\n    },\n    query: \"None\"\n}");
+
+        context.set_query(|_| {None});
+        let mut string = String::new();
+        let _ = write!(string, "{:?}", context);
+        assert_eq!(string, "Context { value: {\"a\": 2}, query: \"Some(<boxed closure>)\" }");
     }
 }
