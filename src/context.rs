@@ -110,7 +110,10 @@ impl<'a> Context<'a> {
     /// context.set("b", 1.0);
     /// assert_eq!(context.get("b"), Some(1.0));
     /// ```
-    pub fn set_query<F>(&mut self, function: F) where F: Fn(&str) -> Option<f64> + 'a {
+    pub fn set_query<F>(&mut self, function: F)
+    where
+        F: Fn(&str) -> Option<f64> + 'a,
+    {
         self.query = Some(Box::new(function));
     }
 }
@@ -146,7 +149,7 @@ mod tests {
         let _ = write!(string, "{:#?}", context);
         assert_eq!(string, "Context {\n    value: {\n        \"a\": 2\n    },\n    query: \"None\"\n}");
 
-        context.set_query(|_| {None});
+        context.set_query(|_| None);
         let mut string = String::new();
         let _ = write!(string, "{:?}", context);
         assert_eq!(string, "Context { value: {\"a\": 2}, query: \"Some(<boxed closure>)\" }");

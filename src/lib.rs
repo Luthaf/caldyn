@@ -1,5 +1,11 @@
 #![warn(missing_docs)]
 
+#![warn(clippy, clippy_pedantic)]
+#![allow(
+    unknown_lints, needless_return, missing_docs_in_private_items,
+    new_without_default_derive, shadow_reuse, or_fun_call
+)]
+
 //! Caldyn, a crate for dynamic evaluation of mathematical expressions.
 //!
 //! This crate provide run-time evaluation of mathematical expressions,

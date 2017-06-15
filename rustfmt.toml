@@ -1,0 +1,6 @@
+chain_indent = "Visual"
+fn_call_width = 100
+max_width = 120
+normalize_comments = true
+tab_spaces = 4
+write_mode = "Overwrite"

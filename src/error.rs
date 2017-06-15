@@ -19,6 +19,7 @@ impl Display for Error {
     }
 }
 
+#[allow(match_same_arms)]
 impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {

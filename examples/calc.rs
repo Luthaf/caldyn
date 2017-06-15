@@ -30,7 +30,7 @@ fn eval_args(args: &[String]) {
         Ok(value) => println!("{}", value),
         Err(error) => {
             let _ = writeln!(io::stderr(), "{}", error);
-        },
+        }
     }
 }
 
@@ -51,7 +51,7 @@ fn repl() {
                         Ok(value) => println!("{}", value),
                         Err(error) => {
                             let _ = writeln!(io::stderr(), "{}", error);
-                        },
+                        }
                     }
                 }
             }
@@ -75,11 +75,9 @@ fn add_variable(context: &mut Context, line: &str) {
         return;
     }
     match caldyn::eval(value, &*context) {
-        Ok(value) => {
-            context.set(var, value)
-        },
+        Ok(value) => context.set(var, value),
         Err(error) => {
             let _ = writeln!(io::stderr(), "{}", error);
-        },
+        }
     }
 }

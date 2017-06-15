@@ -59,9 +59,8 @@ impl Ast {
     /// Construct the AST for a vector of tokens in reverse polish notation.
     /// This function eats the tokens as it uses them
     fn from_tokens(tokens: &mut Vec<Token>, context: &str) -> Result<Ast, Error> {
-        match tokens.pop() {
-            None => Err(Error::ParseError(format!("empty expression{}", context))),
-            Some(token) => match token {
+        if let Some(token) = tokens.pop() {
+            match token {
                 Token::Value(value) => {
                     if let Some(&func) = FUNCTIONS.get(&value) {
                         let args = Box::new(try!(Ast::from_tokens(tokens, " in function call")));
@@ -84,9 +83,11 @@ impl Ast {
                         Op::Div => Ok(Ast::Div(left, right)),
                         Op::Exp => Ok(Ast::Exp(left, right)),
                     }
-                },
-                _ => panic!("Internal error: got {:?} token after shunting yard"),
+                }
+                other => panic!("Internal error: got {:?} token after shunting yard", other),
             }
+        } else {
+            Err(Error::ParseError(format!("empty expression{}", context)))
         }
     }
 
@@ -95,9 +96,9 @@ impl Ast {
         match *self {
             Ast::Variable(ref name) => {
                 context.and_then(|context| context.get(name)).ok_or(
-                    Error::NameError(format!("name '{}' is not defined", name))
+                    Error::NameError(format!("name '{}' is not defined", name)),
                 )
-            },
+            }
             Ast::Value(number) => Ok(number),
             Ast::Add(ref left, ref right) => Ok(try!(left.eval(context)) + try!(right.eval(context))),
             Ast::Sub(ref left, ref right) => Ok(try!(left.eval(context)) - try!(right.eval(context))),
@@ -217,20 +218,19 @@ impl Expr {
         let mut output = Vec::new();
         let mut operators = Vec::new();
 
-        'tokens: while let Some(token) = try!(lexer.next()) {
+        'tokens: while let Some(token) = try!(lexer.next_token()) {
             match token {
                 Token::Value(ref name) if FUNCTIONS.contains_key(name) => {
                     operators.push(token.clone());
-                },
+                }
                 Token::Value(_) => output.push(token),
                 Token::Op(o1) => {
                     'operators: while let Some(token) = operators.last().cloned() {
                         match token {
                             Token::Op(o2) => {
-                                if o1.is_left_associative() && o1.precedence() <= o2.precedence() {
-                                    operators.pop();
-                                    output.push(Token::Op(o2));
-                                } else if o1.is_right_associative() && o1.precedence() < o2.precedence() {
+                                let pop_me = o1.is_left_associative() && o1.precedence() <= o2.precedence();
+                                let pop_me = pop_me || o1.is_right_associative() && o1.precedence() < o2.precedence();
+                                if pop_me {
                                     operators.pop();
                                     output.push(Token::Op(o2));
                                 } else {
@@ -256,13 +256,13 @@ impl Expr {
                                 if next_is_fn {
                                     output.push(operators.pop().expect("emtpy operator stack"));
                                 }
-                                continue 'tokens
-                            },
+                                continue 'tokens;
+                            }
                             Token::Op(_) => output.push(token),
-                            other => panic!("Internal bug: found {:?} in operators stack", other)
+                            other => panic!("Internal bug: found {:?} in operators stack", other),
                         }
                     }
-                    return Err(Error::ParseError("mismatched parenthesis".into()))
+                    return Err(Error::ParseError("mismatched parenthesis".into()));
                 }
             }
         }
@@ -271,13 +271,13 @@ impl Expr {
             match token {
                 Token::LParen => return Err(Error::ParseError("mismatched parenthesis".into())),
                 Token::Op(_) => output.push(token),
-                other => panic!("Internal bug: found {:?} in operators stack", other)
+                other => panic!("Internal bug: found {:?} in operators stack", other),
             }
         }
 
         let ast = try!(Ast::from_tokens(&mut output, ""));
         if output.is_empty() {
-            Ok(Expr{ast: ast.optimize()})
+            Ok(Expr { ast: ast.optimize() })
         } else {
             Err(Error::ParseError("extra data at the end of the expression".into()))
         }
@@ -300,7 +300,10 @@ impl Expr {
     /// context.set("a", 2.0);
     /// assert_eq!(expr.eval(&context), Ok(5.0));
     /// ```
-    pub fn eval<'a, C>(&self, context: C) -> Result<f64, Error> where C: Into<Option<&'a Context<'a>>> {
+    pub fn eval<'a, C>(&self, context: C) -> Result<f64, Error>
+    where
+        C: Into<Option<&'a Context<'a>>>,
+    {
         self.ast.eval(context.into())
     }
 }
@@ -320,10 +323,8 @@ impl Op {
     /// evaluated first.
     fn precedence(&self) -> u8 {
         match *self {
-            Op::Plus => 1,
-            Op::Minus => 1,
-            Op::Mul => 2,
-            Op::Div => 2,
+            Op::Plus | Op::Minus => 1,
+            Op::Mul | Op::Div => 2,
             Op::Exp => 3,
         }
     }
@@ -331,10 +332,7 @@ impl Op {
     /// Check if the operator is left associative
     fn is_left_associative(&self) -> bool {
         match *self {
-            Op::Plus => true,
-            Op::Minus => true,
-            Op::Mul => true,
-            Op::Div => true,
+            Op::Plus | Op::Minus | Op::Mul | Op::Div => true,
             Op::Exp => false,
         }
     }
@@ -365,15 +363,13 @@ struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     fn new(string: &str) -> Lexer {
-        Lexer {
-            input: string.chars().peekable()
-        }
+        Lexer { input: string.chars().peekable() }
     }
 
-    fn next(&mut self) -> Result<Option<Token>, Error> {
+    fn next_token(&mut self) -> Result<Option<Token>, Error> {
         if let Some(c) = self.input.next() {
             let token = match c {
-                ' ' | '\t' | '\n' | '\r' => return self.next(),
+                ' ' | '\t' | '\n' | '\r' => return self.next_token(),
                 c if is_value_start(c) => {
                     let mut ident = String::new();
                     ident.push(c);
@@ -399,7 +395,7 @@ impl<'a> Lexer<'a> {
                 '^' => Token::Op(Op::Exp),
                 '(' => Token::LParen,
                 ')' => Token::RParen,
-                other => return Err(Error::ParseError(format!("unexpected characted in input: {}", other)))
+                other => return Err(Error::ParseError(format!("unexpected characted in input: {}", other))),
             };
             Ok(Some(token))
         } else {
@@ -469,7 +465,10 @@ pub fn is_variable(ident: &str) -> bool {
 /// context.set("a", -5.0);
 /// assert_eq!(eval("3 * a", &context), Ok(-15.0));
 /// ```
-pub fn eval<'a, C>(input: &str, context: C) -> Result<f64, Error> where C: Into<Option<&'a Context<'a>>> {
+pub fn eval<'a, C>(input: &str, context: C) -> Result<f64, Error>
+where
+    C: Into<Option<&'a Context<'a>>>,
+{
     Expr::parse(input).and_then(|expr| expr.eval(context))
 }
 
@@ -570,13 +569,13 @@ mod tests {
 
     #[test]
     fn optimize() {
-        let Expr{ast} = Expr::parse("3 + 5").unwrap();
+        let Expr { ast } = Expr::parse("3 + 5").unwrap();
         assert_eq!(ast.value(), Some(8.0));
 
-        let Expr{ast} = Expr::parse("(3 + 5^2)*45").unwrap();
+        let Expr { ast } = Expr::parse("(3 + 5^2)*45").unwrap();
         assert_eq!(ast.value(), Some(1260.0));
 
-        let Expr{ast} = Expr::parse("sqrt(9)").unwrap();
+        let Expr { ast } = Expr::parse("sqrt(9)").unwrap();
         assert_eq!(ast.value(), Some(3.0));
     }
 }
