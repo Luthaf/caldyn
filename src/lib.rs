@@ -76,7 +76,7 @@
 //!   `*` for multiplication, `/` for division and `^` for exponentiation
 //!   (`std::f64::powf`);
 //! - variables. Variables names are ASCII only, and can start by a letter or
-//!   `_`, and can contain letters, digits, `_`, `[` or `]`.
+//!   `_`, and can contain letters, digits, `.`, `_`, `[` or `]`.
 //! - function call: `sin(a)`, `atan(22.0)`. The following function are
 //!   accessible, with the same meaning as the corresponding `std::f64`
 //!   function: `sqrt`, `cbrt`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`,
