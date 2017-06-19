@@ -421,7 +421,7 @@ fn is_variable_start(c: char) -> bool {
 
 /// Check if `c` can appear inside a variable
 fn is_variable_part(c: char) -> bool {
-    c == '_' || (c.is_ascii() && c.is_alphanumeric())
+    c == '_' || c == '[' || c == ']' || (c.is_ascii() && c.is_alphanumeric())
 }
 
 /// Check if `ident` is a valid variable name
@@ -487,18 +487,30 @@ mod tests {
         assert!(!is_variable_start('3'));
         assert!(!is_variable_start('à'));
         assert!(!is_variable_start('@'));
+        assert!(!is_variable_start(']'));
+        assert!(!is_variable_start('['));
 
         assert!(is_variable_part('c'));
         assert!(is_variable_part('Z'));
         assert!(is_variable_part('_'));
         assert!(is_variable_part('f'));
         assert!(is_variable_part('3'));
+        assert!(is_variable_part('['));
+        assert!(is_variable_part(']'));
 
         assert!(!is_variable_part('à'));
         assert!(!is_variable_part('@'));
+        assert!(!is_variable_part('{'));
+        assert!(!is_variable_part('}'));
+        assert!(!is_variable_part('('));
+        assert!(!is_variable_part(')'));
 
         assert!(is_variable("_______"));
         assert!(is_variable("abc"));
+        assert!(is_variable("abc[2as]"));
+        assert!(is_variable("abc["));
+        assert!(is_variable("abc]"));
+        assert!(is_variable("abc[90]"));
         assert!(is_variable("a__45__bc"));
         assert!(!is_variable("a-bc"));
         assert!(!is_variable("@bc"));
@@ -538,6 +550,7 @@ mod tests {
         assert!(Expr::parse("(3. + 5.0)*\t\n45").is_ok());
         assert!(Expr::parse("(3 + 5^5e-6)*45").is_ok());
         assert!(Expr::parse("sin(34.0) ^ sqrt(28.0)").is_ok());
+        assert!(Expr::parse("abc[ty8789]").is_ok());
     }
 
     #[test]

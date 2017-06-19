@@ -76,7 +76,7 @@
 //!   `*` for multiplication, `/` for division and `^` for exponentiation
 //!   (`std::f64::powf`);
 //! - variables. Variables names are ASCII only, and can start by a letter or
-//!   `_`, and can contain letters, digits or `_`.
+//!   `_`, and can contain letters, digits, `_`, `[` or `]`.
 //! - function call: `sin(a)`, `atan(22.0)`. The following function are
 //!   accessible, with the same meaning as the corresponding `std::f64`
 //!   function: `sqrt`, `cbrt`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`,
@@ -88,6 +88,12 @@
 //! The mathematical operators obey the usual relations of associativity and
 //! precedence, but still carry the floating point properties: addition is not
 //! commutative, `NaN` and infinities exist, ...
+//!
+//! Please note that while `[` and `]` are allowed in variables names, nothing
+//! is done with them. Users of caldyn can parse and interpret these as
+//! indexing operators in their own [`Context::set_query()`] function.
+//!
+//! [`Context::set_query()`]: struct.Context.html#method.set_query
 //!
 //! # Technical details
 //!
