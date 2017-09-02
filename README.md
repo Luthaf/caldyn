@@ -13,7 +13,7 @@ evaluate user-provided expressions in a larger context.
 
 Add the crate to your `Cargo.toml`:
 
-```
+```toml
 [dependencies]
 caldyn = "0.3"
 ```
