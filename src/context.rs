@@ -139,19 +139,19 @@ mod tests {
     #[test]
     fn debug() {
         let mut context = Context::new();
-        context.set("a", 2.0);
+        context.set("a", 2.4);
 
         let mut string = String::new();
         let _ = write!(string, "{:?}", context);
-        assert_eq!(string, "Context { value: {\"a\": 2}, query: \"None\" }");
+        assert_eq!(string, "Context { value: {\"a\": 2.4}, query: \"None\" }");
 
         let mut string = String::new();
         let _ = write!(string, "{:#?}", context);
-        assert_eq!(string, "Context {\n    value: {\n        \"a\": 2\n    },\n    query: \"None\"\n}");
+        assert_eq!(string, "Context {\n    value: {\n        \"a\": 2.4\n    },\n    query: \"None\"\n}");
 
         context.set_query(|_| None);
         let mut string = String::new();
         let _ = write!(string, "{:?}", context);
-        assert_eq!(string, "Context { value: {\"a\": 2}, query: \"Some(<boxed closure>)\" }");
+        assert_eq!(string, "Context { value: {\"a\": 2.4}, query: \"Some(<boxed closure>)\" }");
     }
 }

@@ -1,8 +1,8 @@
 #![warn(missing_docs)]
-
+#![allow(unknown_lints)]
 #![warn(clippy, clippy_pedantic)]
 #![allow(
-    unknown_lints, needless_return, missing_docs_in_private_items,
+    needless_return, missing_docs_in_private_items,
     new_without_default_derive, shadow_reuse, or_fun_call
 )]
 
