@@ -1,6 +1,6 @@
 [package]
 name = "caldyn"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Luthaf <luthaf@luthaf.fr>"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
@@ -12,7 +12,7 @@ Dynamic evaluation of mathematical expressions
 """
 
 [dependencies]
-lazy_static = "0.2"
+lazy_static = "1"
 
 [dev-dependencies]
 rustyline = "1"

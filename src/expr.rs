@@ -1,8 +1,6 @@
 use std::str::Chars;
 use std::iter::Peekable;
 
-#[allow(unused_imports)]
-use std::ascii::AsciiExt;
 use std::collections::BTreeMap;
 
 use error::Error;
