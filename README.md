@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Luthaf/caldyn.svg?branch=master)](https://travis-ci.org/Luthaf/caldyn)
 [![codecov](https://codecov.io/gh/Luthaf/caldyn/branch/master/graph/badge.svg)](https://codecov.io/gh/Luthaf/caldyn)
+[![crates.io](https://img.shields.io/crates/v/caldyn.svg)](https://crates.io/crates/caldyn)
 
 This crate provide run-time evaluation of mathematical expressions, embedded in
 strings, containing constants and user-provided variables. This can be used to
@@ -15,7 +16,7 @@ Add the crate to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-caldyn = "0.3"
+caldyn = "0.4"
 ```
 
 The easiest way to use this crate is with the `eval` function:
