@@ -1,6 +1,6 @@
 [package]
 name = "caldyn"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Luthaf <luthaf@luthaf.fr>"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
@@ -19,6 +19,6 @@ rustyline = "1"
 shellexpand = "1"
 
 [badges]
-travis-ci = {repository = "https://github.com/Luthaf/caldyn/"}
-codecov = {repository = "https://github.com/Luthaf/caldyn/"}
+travis-ci = {repository = "Luthaf/caldyn"}
+codecov = {repository = "Luthaf/caldyn"}
 maintenance = { status = "actively-developed" }
