@@ -145,10 +145,6 @@ mod tests {
         let _ = write!(string, "{:?}", context);
         assert_eq!(string, "Context { value: {\"a\": 2.4}, query: \"None\" }");
 
-        let mut string = String::new();
-        let _ = write!(string, "{:#?}", context);
-        assert_eq!(string, "Context {\n    value: {\n        \"a\": 2.4\n    },\n    query: \"None\"\n}");
-
         context.set_query(|_| None);
         let mut string = String::new();
         let _ = write!(string, "{:?}", context);
