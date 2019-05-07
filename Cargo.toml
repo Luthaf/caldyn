@@ -13,7 +13,7 @@ Dynamic evaluation of mathematical expressions
 """
 
 [dev-dependencies]
-rustyline = "1"
+rustyline = "4"
 shellexpand = "1"
 
 [badges]

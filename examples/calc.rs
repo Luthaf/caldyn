@@ -6,10 +6,6 @@
 //!
 //! In the REPL mode, you can define variables with `<name> = <expr>`.
 
-extern crate caldyn;
-extern crate rustyline;
-extern crate shellexpand;
-
 use caldyn::Context;
 use rustyline::Editor;
 use std::io;
@@ -43,7 +39,7 @@ fn repl() {
         let line = editor.readline(">> ");
         match line {
             Ok(line) => {
-                editor.add_history_entry(&line);
+                editor.add_history_entry(&*line);
                 if line.contains('=') {
                     add_variable(&mut context, &line);
                 } else {
