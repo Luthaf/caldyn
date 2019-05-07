@@ -1,11 +1,3 @@
-#![warn(missing_docs)]
-#![allow(unknown_lints)]
-#![warn(clippy, clippy_pedantic)]
-#![allow(
-    needless_return, missing_docs_in_private_items,
-    new_without_default_derive, shadow_reuse, or_fun_call
-)]
-
 //! Caldyn, a crate for dynamic evaluation of mathematical expressions.
 //!
 //! This crate provide run-time evaluation of mathematical expressions,
@@ -101,13 +93,18 @@
 //! algorithm for parsing the expressions. It works only with `f64` data, and
 //! perform a simple constant propagation to optimize the expressions.
 
-#[macro_use]
-extern crate lazy_static;
+#![warn(missing_docs)]
+#![allow(unknown_lints)]
+#![warn(clippy, clippy_pedantic)]
+#![allow(
+    needless_return, missing_docs_in_private_items,
+    new_without_default_derive, shadow_reuse, or_fun_call
+)]
 
 mod error;
 mod expr;
 mod context;
 
-pub use error::Error;
-pub use expr::{Expr, eval, is_variable};
-pub use context::Context;
+pub use crate::error::Error;
+pub use crate::expr::{Expr, eval, is_variable};
+pub use crate::context::Context;

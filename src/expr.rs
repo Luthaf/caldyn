@@ -1,37 +1,35 @@
 use std::str::Chars;
 use std::iter::Peekable;
 
-use std::collections::BTreeMap;
+use crate::error::Error;
+use crate::context::Context;
 
-use error::Error;
-use context::Context;
-
-lazy_static!{
-    static ref FUNCTIONS: BTreeMap<String, fn(f64) -> f64> = {
-        let mut map = BTreeMap::<String, fn(f64) -> f64>::new();
-        map.insert("sqrt".into(), f64::sqrt);
-        map.insert("cbrt".into(), f64::cbrt);
-        map.insert("sin".into(), f64::sin);
-        map.insert("cos".into(), f64::cos);
-        map.insert("tan".into(), f64::tan);
-        map.insert("asin".into(), f64::asin);
-        map.insert("acos".into(), f64::acos);
-        map.insert("atan".into(), f64::atan);
-        map.insert("sinh".into(), f64::sinh);
-        map.insert("cosh".into(), f64::cosh);
-        map.insert("tanh".into(), f64::tanh);
-        map.insert("asinh".into(), f64::asinh);
-        map.insert("acosh".into(), f64::acosh);
-        map.insert("atanh".into(), f64::atanh);
-        map.insert("floor".into(), f64::floor);
-        map.insert("ceil".into(), f64::ceil);
-        map.insert("abs".into(), f64::abs);
-        map.insert("exp".into(), f64::exp);
-        map.insert("ln".into(), f64::ln);
-        map.insert("log2".into(), f64::log2);
-        map.insert("log10".into(), f64::log10);
-        map
-    };
+/// Get the math function associated with the given `name`
+fn math_function(name: &str) -> Option<fn(f64) -> f64> {
+    match name {
+        "sqrt" => Some(f64::sqrt),
+        "cbrt" => Some(f64::cbrt),
+        "sin" => Some(f64::sin),
+        "cos" => Some(f64::cos),
+        "tan" => Some(f64::tan),
+        "asin" => Some(f64::asin),
+        "acos" => Some(f64::acos),
+        "atan" => Some(f64::atan),
+        "sinh" => Some(f64::sinh),
+        "cosh" => Some(f64::cosh),
+        "tanh" => Some(f64::tanh),
+        "asinh" => Some(f64::asinh),
+        "acosh" => Some(f64::acosh),
+        "atanh" => Some(f64::atanh),
+        "floor" => Some(f64::floor),
+        "ceil" => Some(f64::ceil),
+        "abs" => Some(f64::abs),
+        "exp" => Some(f64::exp),
+        "ln" => Some(f64::ln),
+        "log2" => Some(f64::log2),
+        "log10" => Some(f64::log10),
+        _ => None
+    }
 }
 
 /// Ast nodes for the expressions
@@ -62,8 +60,8 @@ impl Ast {
         if let Some(token) = tokens.pop() {
             match token {
                 Token::Value(value) => {
-                    if let Some(&func) = FUNCTIONS.get(&value) {
-                        let args = Box::new(try!(Ast::from_tokens(tokens, " in function call")));
+                    if let Some(func) = math_function(&value) {
+                        let args = Box::new(Ast::from_tokens(tokens, " in function call")?);
                         Ok(Ast::Function(func, args))
                     } else if let Ok(number) = value.parse() {
                         Ok(Ast::Value(number))
@@ -74,8 +72,8 @@ impl Ast {
                     }
                 }
                 Token::Op(op) => {
-                    let right = Box::new(try!(Ast::from_tokens(tokens, " after operator")));
-                    let left = Box::new(try!(Ast::from_tokens(tokens, " befor operator")));
+                    let right = Box::new(Ast::from_tokens(tokens, " after operator")?);
+                    let left = Box::new(Ast::from_tokens(tokens, " befor operator")?);
                     match op {
                         Op::Plus => Ok(Ast::Add(left, right)),
                         Op::Minus => Ok(Ast::Sub(left, right)),
@@ -100,12 +98,12 @@ impl Ast {
                 )
             }
             Ast::Value(number) => Ok(number),
-            Ast::Add(ref left, ref right) => Ok(try!(left.eval(context)) + try!(right.eval(context))),
-            Ast::Sub(ref left, ref right) => Ok(try!(left.eval(context)) - try!(right.eval(context))),
-            Ast::Mul(ref left, ref right) => Ok(try!(left.eval(context)) * try!(right.eval(context))),
-            Ast::Div(ref left, ref right) => Ok(try!(left.eval(context)) / try!(right.eval(context))),
-            Ast::Exp(ref left, ref right) => Ok(try!(left.eval(context)).powf(try!(right.eval(context)))),
-            Ast::Function(ref func, ref arg) => Ok(func(try!(arg.eval(context)))),
+            Ast::Add(ref left, ref right) => Ok(left.eval(context)? + right.eval(context)?),
+            Ast::Sub(ref left, ref right) => Ok(left.eval(context)? - right.eval(context)?),
+            Ast::Mul(ref left, ref right) => Ok(left.eval(context)? * right.eval(context)?),
+            Ast::Div(ref left, ref right) => Ok(left.eval(context)? / right.eval(context)?),
+            Ast::Exp(ref left, ref right) => Ok(left.eval(context)?.powf(right.eval(context)?)),
+            Ast::Function(ref func, ref arg) => Ok(func(arg.eval(context)?)),
         }
     }
 
@@ -218,9 +216,9 @@ impl Expr {
         let mut output = Vec::new();
         let mut operators = Vec::new();
 
-        'tokens: while let Some(token) = try!(lexer.next_token()) {
+        'tokens: while let Some(token) = lexer.next_token()? {
             match token {
-                Token::Value(ref name) if FUNCTIONS.contains_key(name) => {
+                Token::Value(ref name) if math_function(name).is_some() => {
                     operators.push(token.clone());
                 }
                 Token::Value(_) => output.push(token),
@@ -248,7 +246,7 @@ impl Expr {
                         match token {
                             Token::LParen => {
                                 let next_is_fn = if let Some(&Token::Value(ref name)) = operators.last() {
-                                    FUNCTIONS.contains_key(name)
+                                    math_function(name).is_some()
                                 } else {
                                     false
                                 };
@@ -275,7 +273,7 @@ impl Expr {
             }
         }
 
-        let ast = try!(Ast::from_tokens(&mut output, ""));
+        let ast = Ast::from_tokens(&mut output, "")?;
         if output.is_empty() {
             Ok(Expr { ast: ast.optimize() })
         } else {
